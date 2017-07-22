@@ -10,12 +10,11 @@
 #import <AudioToolbox/AudioToolbox.h>
 @interface BXAudioUnitPlayer()<NSURLSessionDelegate>
 {
-
     AudioUnit _outAudioUinit;
     AudioBufferList *_renderBufferList;
     AudioFileStreamID _audioFileStreamID;
     AudioConverterRef _converter;
-     AudioStreamBasicDescription _streamDescription;
+    AudioStreamBasicDescription _streamDescription;
     NSInteger _readedPacketIndex;
     UInt32 _renderBufferSize;
 }
@@ -184,7 +183,6 @@ static AudioStreamBasicDescription PCMStreamDescription()
     OSStatus status = AudioFileStreamParseBytes(_audioFileStreamID, (UInt32)data.length, data.bytes, 0);
     assert(status == noErr);
 }
-
 
 - (void)play
 {

@@ -11,7 +11,6 @@
 @interface BXAudioUnitEQPlayer ()<NSURLSessionDelegate>
 {
     AUGraph _audioGraph;
-    AudioUnit _mixUnit;
     AudioUnit _EQUnit;
     AudioUnit _outUnit;
     AudioBufferList *_renderBufferList;
@@ -165,16 +164,6 @@ static void BXAudioFileStreamPacketsCallback(void * inClientData, UInt32 inNumbe
     NewAUGraph(&_audioGraph);
     AUGraphOpen(_audioGraph);
     
-    //mix unit
-    AudioComponentDescription mixUnitDesc;
-    mixUnitDesc.componentType = kAudioUnitType_Mixer;
-    mixUnitDesc.componentSubType = kAudioUnitSubType_MultiChannelMixer;
-    mixUnitDesc.componentManufacturer = kAudioUnitManufacturer_Apple;
-    mixUnitDesc.componentFlags = 0;
-    mixUnitDesc.componentFlagsMask = 0;
-    AUNode mixNode;
-    AUGraphAddNode(_audioGraph, &mixUnitDesc, &mixNode);
-    
     // EQ
     AudioComponentDescription EQUnitDesc;
     EQUnitDesc.componentType = kAudioUnitType_Effect;
@@ -195,20 +184,15 @@ static void BXAudioFileStreamPacketsCallback(void * inClientData, UInt32 inNumbe
     AUNode outNode;
     AUGraphAddNode(_audioGraph, &outUnitDesc, &outNode);
     
-    AUGraphConnectNodeInput(_audioGraph, mixNode, 0, EQNode, 0);
     AUGraphConnectNodeInput(_audioGraph, EQNode, 0, outNode, 0);
     
-    AUGraphNodeInfo(_audioGraph, mixNode, &mixUnitDesc, &_mixUnit);
-    
+   
     AUGraphNodeInfo(_audioGraph, EQNode, &EQUnitDesc, &_EQUnit);
     
     AUGraphNodeInfo(_audioGraph, outNode, &outUnitDesc, &_outUnit);
     
     AudioStreamBasicDescription audioFormat = PCMStreamDescription();
-    AudioUnitSetProperty(_mixUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &audioFormat, sizeof(audioFormat));
-    
-    AudioUnitSetProperty(_mixUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &audioFormat, sizeof(audioFormat));
-    
+   
     AudioUnitSetProperty(_EQUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Input, 0, &audioFormat, sizeof(audioFormat));
     
     AudioUnitSetProperty(_EQUnit, kAudioUnitProperty_StreamFormat, kAudioUnitScope_Output, 0, &audioFormat, sizeof(audioFormat));
@@ -219,7 +203,7 @@ static void BXAudioFileStreamPacketsCallback(void * inClientData, UInt32 inNumbe
     callbackStruct.inputProcRefCon = (__bridge void *)(self);
     callbackStruct.inputProc = BXPlayerAURenderCallback;
     
-    AUGraphSetNodeInputCallback(_audioGraph, mixNode, 0, &callbackStruct);
+    AUGraphSetNodeInputCallback(_audioGraph, EQNode, 0, &callbackStruct);
     AUGraphInitialize(_audioGraph);
     
     UInt32 bufferSize = 4096 * 4;
@@ -232,7 +216,6 @@ static void BXAudioFileStreamPacketsCallback(void * inClientData, UInt32 inNumbe
     
      CAShow(_audioGraph);
 }
-
 
 - (void)URLSession:(NSURLSession *)session dataTask:(NSURLSessionDataTask *)dataTask didReceiveData:(NSData *)data
 {
